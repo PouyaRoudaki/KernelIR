@@ -51,7 +51,7 @@
 #' \code{\link[RANN]{nn2}} for the underlying nearest neighbor search,
 #' \code{\link[base]{sample}} for the random sampling behavior
 #'
-#' @useDynLib IKMD, .registration = TRUE
+#' @useDynLib KernelIR, .registration = TRUE
 #' @importFrom Rcpp evalCpp
 #' @importFrom RANN nn2
 #' @export
