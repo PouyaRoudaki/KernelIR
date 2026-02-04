@@ -1,0 +1,8 @@
+
+# compiled artifacts
+src/*.o
+src/*.dll
+src/*.so
+src/*.a
+src/*.dylib
+.Rproj.user
