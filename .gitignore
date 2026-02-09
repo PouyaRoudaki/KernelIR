@@ -5,6 +5,7 @@ src/*.dll
 src/*.so
 src/*.a
 src/*.dylib
+results/
 .Rproj.user
 
 .Rhistory
