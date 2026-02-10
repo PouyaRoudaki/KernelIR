@@ -37,7 +37,6 @@ alternatives <- c("linear", "step", "W", "Sin", "circular",
                   "lissajous_curve",
                   "heteroskedastic_sin", "hetero_band",
                   "hetero_smooth")
-alternatives <- c("linear", "step")
 
 set.seed(7)
 
