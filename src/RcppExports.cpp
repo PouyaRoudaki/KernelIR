@@ -36,10 +36,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// knn_tie_duplicate_aware_cpp
+IntegerMatrix knn_tie_duplicate_aware_cpp(NumericMatrix X, IntegerMatrix nn_idx, NumericMatrix nn_dists, int Knn, double tol);
+RcppExport SEXP _KernelIR_knn_tie_duplicate_aware_cpp(SEXP XSEXP, SEXP nn_idxSEXP, SEXP nn_distsSEXP, SEXP KnnSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type nn_idx(nn_idxSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type nn_dists(nn_distsSEXP);
+    Rcpp::traits::input_parameter< int >::type Knn(KnnSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(knn_tie_duplicate_aware_cpp(X, nn_idx, nn_dists, Knn, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_KernelIR_centering", (DL_FUNC) &_KernelIR_centering, 1},
     {"_KernelIR_handle_duplicates_and_ties", (DL_FUNC) &_KernelIR_handle_duplicates_and_ties, 4},
+    {"_KernelIR_knn_tie_duplicate_aware_cpp", (DL_FUNC) &_KernelIR_knn_tie_duplicate_aware_cpp, 5},
     {NULL, NULL, 0}
 };
 

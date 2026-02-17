@@ -9,3 +9,7 @@ handle_duplicates_and_ties <- function(X, nn_idx, nn_dists, Knn) {
     .Call(`_KernelIR_handle_duplicates_and_ties`, X, nn_idx, nn_dists, Knn)
 }
 
+knn_tie_duplicate_aware_cpp <- function(X, nn_idx, nn_dists, Knn, tol = 1e-12) {
+    .Call(`_KernelIR_knn_tie_duplicate_aware_cpp`, X, nn_idx, nn_dists, Knn, tol)
+}
+

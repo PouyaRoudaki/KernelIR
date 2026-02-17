@@ -2,29 +2,42 @@
 % Please edit documentation in R/kir_graph.R
 \name{kir_graph}
 \alias{kir_graph}
-\title{kNN-based estimator using tie/duplicate-aware kNN}
+\title{kNN-based estimator with tie/duplicate-aware neighbors and exclusion of \eqn{i} from \eqn{N_j}}
 \usage{
-kir_graph(X, Y, Knn = 5L, eps = 1e-12)
+kir_graph(X, Y, Knn = 5L, eps = 1e-12, debias = TRUE)
 }
 \arguments{
 \item{X}{Numeric matrix/data.frame of predictors with \code{n} rows (samples).}
 
 \item{Y}{Numeric matrix/data.frame of responses with \code{n} rows (samples).}
 
-\item{Knn}{Positive integer number of neighbors. Will be clipped to \code{min(Knn, n-1)}.}
+\item{Knn}{Positive integer number of neighbors (per row). Internally clipped to \code{min(Knn, n-1)}.}
 
-\item{eps}{Small positive constant used to stabilize the division when \eqn{\widehat V_i}
-is close to zero.}
+\item{eps}{Small positive constant \eqn{\varepsilon} used to stabilize the ratio when
+\eqn{\widehat V_i} is close to zero.}
+
+\item{debias}{Logical; if \code{TRUE}, apply a debiasing correction to the square-of-mean term
+used in \eqn{\widehat E_i}.}
 }
 \value{
-A numeric scalar: the estimated value \eqn{\widehat D}.
+A numeric scalar: the estimate \eqn{\widehat D}.
 }
 \description{
-Computes the estimator
-\deqn{\widehat D = 1 - \frac{1}{n}\sum_{i=1}^n \frac{\widehat E_i}{\widehat V_i}}
-where \eqn{\widehat E_i} and \eqn{\widehat V_i} are defined in Proposition 7 and
-the kNN sets \eqn{N_j} are obtained from \code{get_knn()}, which is assumed to be
+Computes
+\deqn{\widehat D = 1 - \frac{1}{n}\sum_{i=1}^n \frac{\widehat E_i}{\max(\widehat V_i, \varepsilon)}}
+where \eqn{\widehat E_i} and \eqn{\widehat V_i} correspond to the quantities in Proposition 7.
+The neighbor sets \eqn{N_j} are obtained via \code{get_knn()}, which is assumed to be
 tie/duplicate-aware.
+}
+\details{
+For each \eqn{i}, the computation uses \eqn{v = K_Y[, i]} where \eqn{K_Y} is an RBF kernel
+matrix on \eqn{Y}. For each \eqn{j \neq i}, we form \eqn{N_j} from \code{get_knn(X, Knn = Knn + 1)}
+and then remove \eqn{i} from that neighbor list (to enforce \eqn{i \notin N_j}). If fewer than
+\code{Knn} neighbors remain, the set is backfilled by sampling without replacement from the
+remaining indices excluding \eqn{\{i, j\}} and the already-chosen neighbors.
+
+If \code{debias = TRUE}, the squared mean term \eqn{(\frac{1}{|N_j|}\sum_{\ell\in N_j} v_\ell)^2}
+is debiased as \eqn{\bar v^2 - s^2/|N_j|}, where \eqn{s^2} is the sample variance over \eqn{N_j}.
 }
 \examples{
 set.seed(1)

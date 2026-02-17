@@ -20,36 +20,64 @@
 #'   \item \strong{Duplicate points}: When multiple points have identical coordinates,
 #'     they are grouped and neighbors are randomly sampled from the group.
 #'   \item \strong{Tied distances}: When multiple points are equidistant at the k-th
-#'     nearest neighbor position, the function randomly samples which points to include
-#'     as neighbors.
+#'     nearest neighbor position, the function randomly samples uniformly
+#'     from the full tied set.
 #' }
 #'
 #' The random sampling ensures unbiased neighbor selection and is useful for
 #' statistical applications where deterministic tie-breaking could introduce bias.
 #'
 #' @note
-#' This function requires the compiled C++ function \code{handle_duplicates_and_ties_cpp}
-#' to be available. Use \code{Rcpp::sourceCpp()} to compile the associated C++ code
-#' before calling this function.
+#' This function requires the compiled C++ function
+#' \code{knn_tie_duplicate_aware_cpp} to be available.
 #'
 #' @examples
-#' \dontrun{
-#' # Create sample data with some duplicate points
-#' set.seed(123)
-#' X <- matrix(rnorm(1000), ncol = 5)
-#' X [ 10:15, ] <- X[ 1, ]  # Add duplicates
+#' ### 1) No duplicates, no ties (deterministic)
+#' X <- matrix(c(0, 1, 3, 6, 10), ncol = 1)
+#' get_knn(X, Knn = 3)
 #'
-#' # Find 5 nearest neighbors with random tie-breaking
-#' nn_indices <- get_knn(X, Knn = 5)
+#' ### 2) Symmetric tie case
+#' X <- matrix(c(-2, -1, 0, 1, 2), ncol = 1)
+#' set.seed(1)
+#' get_knn(X, Knn = 3)
+#' set.seed(2)
+#' get_knn(X, Knn = 3)
 #'
-#' # The results will differ between runs when ties exist
-#' nn_indices2 <- get_knn(X, Knn = 5)
-#' sum(nn_indices != nn_indices2)  # Shows differences due to random tie-breaking
-#' }
+#' ### 3) Small duplicate group
+#' X <- matrix(c(0, 0, 1, 2, 3), ncol = 1)
+#' set.seed(1)
+#' get_knn(X, Knn = 3)
+#'
+#' ### 4) Large duplicate block (> Knn)
+#' X <- matrix(c(0, 0, 0, 0, 5, 6, 7), ncol = 1)
+#' set.seed(1)
+#' nn1 <- get_knn(X, Knn = 3)
+#' set.seed(2)
+#' nn2 <- get_knn(X, Knn = 3)
+#' nn1
+#' nn2
+#'
+#' ### 5) Large boundary tie set
+#' X <- matrix(c(0, 1, 1, 1, 1, 5), ncol = 1)
+#' set.seed(1)
+#' get_knn(X, Knn = 3)
+#'
+#' ### 6) Evenly spaced grid (frequent ties)
+#' X <- matrix(c(0, 2, 4, 6, 8, 10), ncol = 1)
+#' set.seed(1)
+#' get_knn(X, Knn = 3)
+#'
+#' ### 7) Small n edge case
+#' X <- matrix(c(0, 1, 2, 3), ncol = 1)
+#' get_knn(X, Knn = 3)
+#'
+#' ### 8) Duplicates + symmetric ties combined
+#' X <- matrix(c(-1, 0, 0, 0, 1), ncol = 1)
+#' set.seed(1)
+#' get_knn(X, Knn = 3)
 #'
 #' @seealso
-#' \code{\link[RANN]{nn2}} for the underlying nearest neighbor search,
-#' \code{\link[base]{sample}} for the random sampling behavior
+#' \code{\link[RANN]{nn2}}
 #'
 #' @useDynLib KernelIR, .registration = TRUE
 #' @importFrom Rcpp evalCpp
@@ -57,22 +85,22 @@
 #' @export
 get_knn <- function(X, Knn) {
   if (!is.matrix(X)) X <- as.matrix(X)
+  n <- nrow(X)
+  if (n < 2L) stop("Need at least 2 points.")
+  Knn <- as.integer(Knn)
+  Knn <- min(Knn, n - 1L)
+  if (Knn < 1L) stop("Knn must be >= 1.")
 
-  # Use RANN for initial neighbor search
-  nn_result <- RANN::nn2(X, query = X, k = Knn + 2)
-  # Note that we have we need at least Knn +1 because the first element is the
-  # the node itself and in order to flag ties at the boundary case we need to
-  # check whether distance of Knn+1 and Knn +2 are same or not. If they are same
-  # then we need to find all the nodes that have same distance and take a sample
-  # of them.
+  # k = Knn + 2 gives: self + Knn neighbors + 1 lookahead for tie detection
+  k <- min(n, Knn + 2L)
 
-  # Use Rcpp for handling duplicates and ties
-  nn_indices <- handle_duplicates_and_ties(
-    X,
-    nn_result$nn.idx,
-    nn_result$nn.dists,
-    Knn
+  nn_result <- RANN::nn2(X, query = X, k = k)
+
+  knn_tie_duplicate_aware_cpp(
+    X = X,
+    nn_idx = nn_result$nn.idx,
+    nn_dists = nn_result$nn.dists,
+    Knn = Knn,
+    tol = 1e-12
   )
-
-  return(nn_indices)
 }
