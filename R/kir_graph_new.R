@@ -32,7 +32,7 @@
 #' X <- matrix(rnorm(n * 2), n, 2)
 #' Y <- X[, 1, drop = FALSE] + 0.3 * rnorm(n)
 #' kir_graph(X, Y, Knn = 5)
-kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12, debias = TRUE) {
+kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12) {
   X <- as.matrix(X)
   Y <- as.matrix(Y)
 
@@ -60,11 +60,11 @@ kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12, debias = TRUE) {
 
   ratios <- vapply(idx_all, function(i) {
     idx_minus_i <- idx_all[idx_all != i]
-    v <- Ky[, i]
+    v <- Ky[, i]  # v[j] = k_Y(Y_j, Y_i)
 
-    term1 <- mean(v[idx_minus_i]^2)
-
-    avg_sq <- vapply(idx_minus_i, function(j) {
+    # -------- numerator: --------
+    # Ehat_i = (1 / (2 (n-1) Knn)) * sum_{j != i} sum_{k in N_j} (v[j] - v[k])^2
+    sum_jk <- sum(vapply(idx_minus_i, function(j) {
       Nj <- Nmat_big[j, ]
 
       Nj <- Nj[Nj != i]
@@ -80,22 +80,18 @@ kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12, debias = TRUE) {
       if (length(Nj) == 0L) {
         0
       } else {
-        m <- mean(v[Nj])
-        if (!debias) {
-          m^2
-        } else {
-          s2 <- if (length(Nj) > 1L) stats::var(v[Nj]) else 0
-          val <- m^2 - s2 / length(Nj)   # debias square-of-mean
-          #if (clamp0) pmax(val, 0) else val
-        }
+        sum((v[j] - v[Nj])^2)
       }
-    }, numeric(1))
+    }, numeric(1)))
 
-    term2 <- mean(avg_sq)
-    Ehat_i <- term1 - term2
+    Ehat_i <- sum_jk / (2 * (n - 1L) * Knn)
+    # -------------------------------------------------------------------
 
+    # -------- denominator: --------
+    term1 <- mean(v[idx_minus_i]^2)
     mean_v <- mean(v[idx_minus_i])
     Vhat_i <- term1 - mean_v^2
+    # ---------------------------------------
 
     Ehat_i / max(Vhat_i, eps)
   }, numeric(1))
