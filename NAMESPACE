@@ -3,8 +3,6 @@
 export(get_knn)
 export(kir_graph)
 export(kir_rkhs)
-export(old_get_knn)
-export(old_kir_graph)
 importFrom(RANN,nn2)
 importFrom(Rcpp,evalCpp)
 useDynLib(KernelIR, .registration = TRUE)
