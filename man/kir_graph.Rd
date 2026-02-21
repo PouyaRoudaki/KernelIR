@@ -4,7 +4,7 @@
 \alias{kir_graph}
 \title{kNN-based estimator with tie/duplicate-aware neighbors and exclusion of \eqn{i} from \eqn{N_j}}
 \usage{
-kir_graph(X, Y, Knn = 5L, eps = 1e-12)
+kir_graph(X, Y, Knn = 5L, eps = 1e-12, ky = NULL, bandwidth_scale = 1)
 }
 \arguments{
 \item{X}{Numeric matrix/data.frame of predictors with \code{n} rows (samples).}
@@ -16,8 +16,9 @@ kir_graph(X, Y, Knn = 5L, eps = 1e-12)
 \item{eps}{Small positive constant \eqn{\varepsilon} used to stabilize the ratio when
 \eqn{\widehat V_i} is close to zero.}
 
-\item{debias}{Logical; if \code{TRUE}, apply a debiasing correction to the square-of-mean term
-used in \eqn{\widehat E_i}.}
+\item{ky}{Kernel on Y (kernlab kernel object or function(A,B=NULL)->Gram). If NULL, defaults to RBF.}
+
+\item{bandwidth_scale}{Positive scalar for default RBF bandwidth (used only when ky is NULL).}
 }
 \value{
 A numeric scalar: the estimate \eqn{\widehat D}.

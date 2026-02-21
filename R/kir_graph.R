@@ -20,8 +20,8 @@
 #' @param Knn Positive integer number of neighbors (per row). Internally clipped to \code{min(Knn, n-1)}.
 #' @param eps Small positive constant \eqn{\varepsilon} used to stabilize the ratio when
 #'   \eqn{\widehat V_i} is close to zero.
-#' @param debias Logical; if \code{TRUE}, apply a debiasing correction to the square-of-mean term
-#'   used in \eqn{\widehat E_i}.
+#' @param ky Kernel on Y (kernlab kernel object or function(A,B=NULL)->Gram). If NULL, defaults to RBF.
+#' @param bandwidth_scale Positive scalar for default RBF bandwidth (used only when ky is NULL).
 #'
 #' @return A numeric scalar: the estimate \eqn{\widehat D}.
 #' @export
@@ -32,7 +32,12 @@
 #' X <- matrix(rnorm(n * 2), n, 2)
 #' Y <- X[, 1, drop = FALSE] + 0.3 * rnorm(n)
 #' kir_graph(X, Y, Knn = 5)
-kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12) {
+kir_graph <- function(X,
+                      Y,
+                      Knn = 5L,
+                      eps = 1e-12,
+                      ky = NULL,
+                      bandwidth_scale = 1) {
   X <- as.matrix(X)
   Y <- as.matrix(Y)
 
@@ -46,12 +51,10 @@ kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12) {
     stop("eps must be a single positive number.")
   }
 
-  gamma <- stats::median(stats::dist(Y))
-  if (!is.finite(gamma) || gamma <= 0) gamma <- 1
-  sigma <- 1 / (2 * gamma^2)
+  # Default (old behavior): RBF on Y if not supplied
+  if (is.null(ky)) ky <- .default_rbf_kernel(Y, bandwidth_scale = bandwidth_scale)
 
-  rbf <- kernlab::rbfdot(sigma = sigma)
-  Ky  <- kernlab::kernelMatrix(rbf, Y, Y)
+  Ky <- .compute_gram(ky, Y, Y)  # n x n
 
   Knn_big  <- min(Knn + 1L, n - 1L)
   Nmat_big <- get_knn(X, Knn = Knn_big)
@@ -60,10 +63,8 @@ kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12) {
 
   ratios <- vapply(idx_all, function(i) {
     idx_minus_i <- idx_all[idx_all != i]
-    v <- Ky[, i]  # v[j] = k_Y(Y_j, Y_i)
+    v <- Ky[, i]
 
-    # -------- numerator: --------
-    # Ehat_i = (1 / (2 (n-1) Knn)) * sum_{j != i} sum_{k in N_j} (v[j] - v[k])^2
     sum_jk <- sum(vapply(idx_minus_i, function(j) {
       Nj <- Nmat_big[j, ]
 
@@ -77,21 +78,14 @@ kir_graph <- function(X, Y, Knn = 5L, eps = 1e-12) {
         }
       }
 
-      if (length(Nj) == 0L) {
-        0
-      } else {
-        sum((v[j] - v[Nj])^2)
-      }
+      if (length(Nj) == 0L) 0 else sum((v[j] - v[Nj])^2)
     }, numeric(1)))
 
     Ehat_i <- sum_jk / (2 * (n - 1L) * Knn)
-    # -------------------------------------------------------------------
 
-    # -------- denominator: --------
-    term1 <- mean(v[idx_minus_i]^2)
+    term1  <- mean(v[idx_minus_i]^2)
     mean_v <- mean(v[idx_minus_i])
     Vhat_i <- term1 - mean_v^2
-    # ---------------------------------------
 
     Ehat_i / max(Vhat_i, eps)
   }, numeric(1))

@@ -4,17 +4,20 @@
 \alias{kir_rkhs}
 \title{Kernel-integrated R2: RKHS estimator (KIR-RKHS)}
 \usage{
-kir_rkhs(X, Y, bandwidth_scale = 1, eps = 1e-04)
+kir_rkhs(X, Y, kx = NULL, ky = NULL, bandwidth_scale = 1, eps = 1e-04)
 }
 \arguments{
 \item{X}{Numeric matrix/data frame of predictors (n x p).}
 
 \item{Y}{Numeric matrix/data frame of responses (n x q).}
 
-\item{bandwidth_scale}{Positive scalar multiplying the default RBF bandwidth.}
+\item{kx}{Kernel for X (kernlab kernel object or function(A,B=NULL)->Gram). If NULL, defaults to RBF.}
 
-\item{eps}{Nonnegative ridge parameter (scaled by \code{n}) added to the centered
-Gram matrix diagonal for numerical stability.}
+\item{ky}{Kernel for Y (kernlab kernel object or function(A,B=NULL)->Gram). If NULL, defaults to RBF.}
+
+\item{bandwidth_scale}{Positive scalar multiplying the default RBF bandwidth (used only when kernel is NULL).}
+
+\item{eps}{Nonnegative ridge parameter (scaled by n) for stability.}
 }
 \value{
 A numeric scalar in principle near \eqn{[0, 1]}: larger values indicate
