@@ -1,0 +1,22 @@
+Package: KernelIR
+Type: Package
+Title: Implements the new kernel measure of dependence with two estimators (based on KNN graphs and RKHS).
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Anonymous", "Anonymous",
+      email = "Anonymous@Anonymous.com",
+      role = c("aut", "cre")
+    )
+  )
+Description: This package implements a new kernel-based measure of statistical dependence between random variables. It provides two complementary estimators: 1.KNN graph–based estimator 2.RKHS (Reproducing Kernel Hilbert Space)–based estimator. The framework is fully nonparametric and is designed to detect general nonlinear and non-monotonic dependence structures.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports:
+    Rcpp (>= 1.0.0),
+    data.table,
+    kernlab
+LinkingTo:
+    Rcpp, RcppArmadillo
+RoxygenNote: 7.3.2
