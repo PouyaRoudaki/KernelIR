@@ -9,3 +9,7 @@ results/
 .Rproj.user
 
 .Rhistory
+.RData
+
+# large data files kept locally for reproducibility, not tracked in git
+inst/7.2.Million_Song_Data_Study/YearPredictionMSD.txt
